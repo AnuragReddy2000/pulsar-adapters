@@ -49,7 +49,8 @@ public class PulsarSpoutConfiguration extends PulsarStormConfiguration {
     private boolean autoUnsubscribe = false;
     private boolean durableSubscription = true;
     // read position if non-durable subscription is enabled : default oldest message available in topic
-    private MessageId nonDurableSubscriptionReadPosition = MessageId.earliest; 
+    private MessageId nonDurableSubscriptionReadPosition = MessageId.earliest;
+    private boolean negativeAckFailedMessagesEnabled = false;
 
     
     /**
@@ -191,5 +192,13 @@ public class PulsarSpoutConfiguration extends PulsarStormConfiguration {
      */
     public void setNonDurableSubscriptionReadPosition(MessageId nonDurableSubscriptionReadPosition) {
         this.nonDurableSubscriptionReadPosition = nonDurableSubscriptionReadPosition;
+    }
+
+    public boolean isNegativeAckFailedMessagesEnabled(){
+        return this.negativeAckFailedMessagesEnabled;
+    }
+
+    public void setNegativeAckFailedMessagesEnabled(boolean negativeAckFailedMessagesEnabled){
+        this.negativeAckFailedMessagesEnabled = negativeAckFailedMessagesEnabled;
     }
 }
