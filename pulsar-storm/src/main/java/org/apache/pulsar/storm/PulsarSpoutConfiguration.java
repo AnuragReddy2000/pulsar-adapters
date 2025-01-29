@@ -194,10 +194,19 @@ public class PulsarSpoutConfiguration extends PulsarStormConfiguration {
         this.nonDurableSubscriptionReadPosition = nonDurableSubscriptionReadPosition;
     }
 
+    /**
+     *
+     * @return if the failed messages have to negative acked
+     */
     public boolean isNegativeAckFailedMessagesEnabled(){
         return this.negativeAckFailedMessagesEnabled;
     }
 
+    /**
+     * Sets whether the failed messages have to be negative acked. <i>(default: false)</i>
+     *
+     * @param negativeAckFailedMessagesEnabled
+     */
     public void setNegativeAckFailedMessagesEnabled(boolean negativeAckFailedMessagesEnabled){
         this.negativeAckFailedMessagesEnabled = negativeAckFailedMessagesEnabled;
     }

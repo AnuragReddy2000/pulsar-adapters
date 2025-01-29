@@ -82,7 +82,6 @@ public class PulsarSpout extends BaseRichSpout implements IMetric {
     private String spoutId;
     private SpoutOutputCollector collector;
     private PulsarSpoutConsumer consumer;
-    private PulsarSpoutDeadLetterPolicy pulsarSpoutDeadLetterPolicy;
     private volatile long messagesReceived = 0;
     private volatile long messagesEmitted = 0;
     private volatile long messagesFailed = 0;
@@ -115,8 +114,6 @@ public class PulsarSpout extends BaseRichSpout implements IMetric {
         this.pulsarSpoutConf = pulsarSpoutConf;
         this.failedRetriesTimeoutNano = pulsarSpoutConf.getFailedRetriesTimeout(TimeUnit.NANOSECONDS);
         this.maxFailedRetries = pulsarSpoutConf.getMaxFailedRetries();
-        // This is required as the deadLetterPolicy attribute in ConsumerConfigurationData is transient & not serializable.
-        this.pulsarSpoutDeadLetterPolicy = new PulsarSpoutDeadLetterPolicy(this.consumerConf.getDeadLetterPolicy());
     }
 
     @Override
@@ -306,10 +303,6 @@ public class PulsarSpout extends BaseRichSpout implements IMetric {
         this.collector = collector;
         pendingMessageRetries.clear();
         failedMessages.clear();
-        // Work around the transient nature of the deadLetterPolicy attribute in the ConsumerConfigurationData class
-        if(pulsarSpoutConf.isNegativeAckFailedMessagesEnabled()){
-            consumerConf.setDeadLetterPolicy(pulsarSpoutDeadLetterPolicy);
-        }
         try {
             consumer = createConsumer();
             LOG.info("[{}] Created a pulsar consumer on topic {} to receive messages with subscription {}", spoutId,
