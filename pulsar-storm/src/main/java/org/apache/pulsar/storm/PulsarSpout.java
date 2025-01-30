@@ -159,6 +159,21 @@ public class PulsarSpout extends BaseRichSpout implements IMetric {
         }
     }
 
+    public void negativeAck(Object msgId) {
+        if (msgId instanceof Message) {
+            Message<?> msg = (Message<?>) msgId;
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("[{}] Received negative ack for message {}", spoutId, msg.getMessageId());
+            }
+            consumer.negativeAcknowledge(msg);
+            pendingMessageRetries.remove(msg.getMessageId());
+            // we should also remove message from failedMessages but it will be
+            // eventually removed while emitting next
+            // tuple
+            --pendingAcks;
+        }
+    }
+
     @Override
     public void fail(Object msgId) {
         if (msgId instanceof Message) {
@@ -183,8 +198,13 @@ public class PulsarSpout extends BaseRichSpout implements IMetric {
                 --pendingAcks;
                 messagesFailed++;
             } else {
-                LOG.warn("[{}] Number of retries limit reached, dropping the message {}", spoutId, id);
-                ack(msg);
+                if(pulsarSpoutConf.shouldNegativeAckFailedMessages()){
+                    LOG.warn("[{}] Number of retries limit reached, negative acking the message {}", spoutId, id);
+                    negativeAck(msg);
+                } else {
+                    LOG.warn("[{}] Number of retries limit reached, dropping the message {}", spoutId, id);
+                    ack(msg);
+                }
             }
         }
 
@@ -325,7 +345,13 @@ public class PulsarSpout extends BaseRichSpout implements IMetric {
 
     private boolean mapToValueAndEmit(Message<byte[]> msg) {
         if (msg != null) {
-            Values values = pulsarSpoutConf.getMessageToValuesMapper().toValues(msg);
+            Values values;
+            try{
+                values = pulsarSpoutConf.getMessageToValuesMapper().toValues(msg);
+            } catch (Exception e){
+                LOG.error("[{}] Error mapping message to values", msg.getMessageId(), e);
+                return false;
+            }
             ++pendingAcks;
             if (values == null) {
                 // since the mapper returned null, we can drop the message and
@@ -448,6 +474,11 @@ public class PulsarSpout extends BaseRichSpout implements IMetric {
         }
 
         @Override
+        public void negativeAcknowledge(Message<?> msg) {
+            consumer.negativeAcknowledge(msg);
+        }
+
+        @Override
         public void close() throws PulsarClientException {
             consumer.close();
         }
@@ -474,6 +505,11 @@ public class PulsarSpout extends BaseRichSpout implements IMetric {
 
         @Override
         public void acknowledgeAsync(Message<?> msg) {
+            // No-op
+        }
+
+        @Override
+        public void negativeAcknowledge(Message<?> msg) {
             // No-op
         }
 
