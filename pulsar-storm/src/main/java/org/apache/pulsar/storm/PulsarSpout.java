@@ -345,13 +345,7 @@ public class PulsarSpout extends BaseRichSpout implements IMetric {
 
     private boolean mapToValueAndEmit(Message<byte[]> msg) {
         if (msg != null) {
-            Values values;
-            try{
-                values = pulsarSpoutConf.getMessageToValuesMapper().toValues(msg);
-            } catch (Exception e){
-                LOG.error("[{}] Error mapping message to values", msg.getMessageId(), e);
-                return false;
-            }
+            Values values = pulsarSpoutConf.getMessageToValuesMapper().toValues(msg);
             ++pendingAcks;
             if (values == null) {
                 // since the mapper returned null, we can drop the message and
